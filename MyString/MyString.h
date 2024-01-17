@@ -6,11 +6,12 @@
 class MyString
 {
 public:
-    explicit MyString(const char* str);
+    MyString(const char* str = "");
     MyString(const MyString& str);
     MyString(MyString&& str) noexcept;
     ~MyString() { delete[] m_data; }
 
+    void resize(int newSize);
     int size() const { return m_size; }
     void clear();
     void erase();
@@ -29,8 +30,8 @@ public:
     friend bool operator== (const MyString& str_1, const MyString& str_2);
     friend bool operator> (const MyString& str_1, const MyString& str_2);
     friend bool operator< (const MyString& str_1, const MyString& str_2) { return !(str_1 > str_2); }
-    friend std::ostream& operator<< (std::ostream& out, const MyString& str_2);
-    friend std::istream& operator>> (std::istream& in, MyString& str_2);
+    friend std::ostream& operator<< (std::ostream& out, const MyString& str);
+    friend std::istream& operator>> (std::istream& in, MyString& str);
 
 private:
     char* m_data{};

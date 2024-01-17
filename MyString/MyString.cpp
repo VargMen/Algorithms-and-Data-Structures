@@ -6,7 +6,6 @@
 
 MyString::MyString(const char* str)
 {
-    std::cout << "Constructor\n";
     assert(str != nullptr && "Invalid construction");
     int size { stringSize(str) };
 
@@ -19,7 +18,6 @@ MyString::MyString(const char* str)
 
 MyString::MyString(const MyString& str)
 {
-    std::cout << "Copy\n";
     if(str.empty())
     {
         erase();
@@ -33,7 +31,6 @@ MyString::MyString(const MyString& str)
 
 MyString::MyString(MyString&& str) noexcept
 {
-    std::cout << "Move\n";
     delete[] m_data;
     m_data = str.m_data;
     m_size = str.m_size;
@@ -45,7 +42,6 @@ MyString::MyString(MyString&& str) noexcept
 
 MyString& MyString::operator= (const MyString& str) noexcept
 {
-    std::cout << "Assign";
     if(this == &str)
         return *this;
 
@@ -106,9 +102,39 @@ bool operator> (const MyString& str_1, const MyString& str_2)
     return true;
 }
 
-std::istream& operator>> (std::istream& in, MyString& str_2)
+std::istream& operator>> (std::istream& in, MyString& str)
 {
+    delete[] str.m_data;
 
+    char buffer[1024]{};
+    in.getline(buffer, sizeof(buffer));
+
+    int size { stringSize(buffer) };
+
+    str.m_data = new char[size + 1]{};
+    str.m_size = size;
+    std::copy_n(buffer, size, str.m_data);
+
+    return in;
+}
+
+void MyString::resize(int newSize)
+{
+    assert(newSize >= 0 && "Negative size in resize()");
+    char* data{ new char[newSize+1]{} };
+
+    for(int i{0}; i < newSize; ++i)
+    {
+        if(i == m_size) //if newSize > m_size we leave the rest elements with zeros
+            break;
+        data[i] = m_data[i];
+    }
+
+    delete[] m_data;
+    m_data = data;
+    m_size = newSize;
+
+    data = nullptr;
 }
 
 bool MyString::empty() const
