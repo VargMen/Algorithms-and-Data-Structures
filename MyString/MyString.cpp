@@ -39,6 +39,14 @@ MyString::MyString(MyString&& str) noexcept
     str.m_size = 0;
 }
 
+MyString operator+(const MyString& str_1, const MyString& str_2)
+{
+    MyString temp {str_1};
+    temp += str_2;
+
+    return temp;
+}
+
 
 MyString& MyString::operator= (const MyString& str) noexcept
 {
@@ -54,15 +62,35 @@ MyString& MyString::operator= (const MyString& str) noexcept
     return *this;
 }
 
+MyString& MyString::operator= (MyString&& str) noexcept
+{
+    if(this == &str)
+        return *this;
+
+    m_data = str.m_data;
+    m_size = str.m_size;
+
+    str.m_data = nullptr;
+    str.m_size = 0;
+
+    return *this;
+}
+
 
 MyString MyString::operator+=(const MyString& str)
 {
+    int newSize {m_size + str.m_size + 1};
     char* data { new char[m_size + str.m_size + 1]{} };
 
     std::copy_n(m_data, m_size, data);
     std::copy_n(str.m_data, str.m_size, data + m_size);
 
-    return MyString{data};
+    this->m_data = data;
+    this->m_size = newSize;
+
+    data = nullptr;
+
+    return *this;
 }
 
 char MyString::operator[](int index) const
@@ -79,24 +107,24 @@ std::ostream& operator<< (std::ostream& out, const MyString& str)
 
 }
 
-bool operator== (const MyString& str_1, const MyString& str_2)
+bool MyString::operator== (const MyString& str) const
 {
-    if(str_1.m_size != str_2.m_size)
+    if(m_size != str.m_size)
         return false;
-    for(int i{0}; i < str_1.m_size; ++i)
-        if(str_1[i] != str_2[i])
+    for(int i{0}; i < m_size; ++i)
+        if(m_data[i] != str[i])
             return false;
 
     return true;
 }
 
-bool operator> (const MyString& str_1, const MyString& str_2)
+bool MyString::operator> (const MyString& str) const
 {
-    if(str_1.m_size != str_2.m_size)
-        return (str_1.m_size > str_2.m_size);
+    if(m_size != str.m_size)
+        return (m_size > str.m_size);
 
-    for(int i{0}; i < str_1.m_size; ++i)
-        if(str_1[i] < str_2[i])
+    for(int i{0}; i < m_size; ++i)
+        if(m_data[i] < str[i])
             return false;
 
     return true;
@@ -204,11 +232,18 @@ MyString MyString::substr(int index, int length)
     return MyString{data};
 }
 
-int MyString::find(const MyString& str, int pos) const
-{
+int MyString::find(const MyString& str, int pos, int numOfChars) const //numOfChars represents the number of chars
+{                                                                      //that will be checked for matching starting from pos
     assert(pos >= 0 && pos < m_size && "Invalid position in find()");
+    assert(numOfChars >= 0 && numOfChars < m_size && "Invalid numOfChars in find()");
+    assert(str.m_size <= (numOfChars + pos) && "Amount of chars to search is not enough to find this string");
 
-    for(int i{0}; i < m_size; ++i)
+    if(!numOfChars)         //if numOfChars == 0 it means we want to check all chars for matching starting from pos
+        numOfChars = m_size;
+    else
+        numOfChars += pos;
+
+    for(int i{pos}; i < numOfChars; ++i)
     {
         if(m_data[i] == str[0])
         {
@@ -218,7 +253,7 @@ int MyString::find(const MyString& str, int pos) const
                 if(j == str.m_size) //if our j == size of str it means that we found match
                     return posOfMatch;
 
-                if(m_data[i] != str.m_data[j])
+                if((m_data[i] != str.m_data[j]) || i >= numOfChars)
                     break;
 
                 ++i;
@@ -226,4 +261,13 @@ int MyString::find(const MyString& str, int pos) const
         }
     }
     return -1;
+}
+
+char MyString::pop_back()
+{
+    char lastChar { m_data[m_size-1] };
+    m_data[m_size-1] = '\0';
+    --m_size;
+
+    return lastChar;
 }

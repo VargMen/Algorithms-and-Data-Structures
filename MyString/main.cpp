@@ -2,13 +2,8 @@
 #include "MyString.h"
 
 int main() {
-    MyString a { "qwerty"};
-    std::cout << a << '\n';
+    MyString a {"aaa_bbb_ccc_aaa_bbb_ccc"};
 
-    MyString b {"AAa"};
-    std::cout << b << '\n';
-
-    MyString c { std::move(MyString{"ab"}) };
-    std::cout << std::boolalpha << (a == b) << '\n';
+    std::cout << a.find("aaa", 15) << '\n';
     return 0;
 }
