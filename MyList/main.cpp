@@ -3,10 +3,9 @@
 
 int main()
 {
-    MyList list {1, 2, 3, 4, 5, 6 ,7};
-    std::cout << list << '\n';
+    MyList l1{1, 2, 3, 4, 5};
 
-    list.erase(2);
-    std::cout << list << '\n';
-    return 0;
+    MyList l2{1, 2, 3, 4, 5};
+
+    std::cout << std::boolalpha << (l1 != l2) << '\n';
 }

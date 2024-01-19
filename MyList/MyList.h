@@ -4,6 +4,7 @@
 #include <iostream>
 #include <initializer_list>
 #include <cassert>
+#include <algorithm> // for std::swap
 
 
 template<typename T>
@@ -17,7 +18,7 @@ public:
         Node* previous{};
 
         Node(T value = 0)
-        : value(value), next{nullptr}, previous{nullptr}
+                : value(value), next{nullptr}, previous{nullptr}
         {
         }
     };
@@ -29,10 +30,10 @@ public:
 
     MyList& operator=(const MyList& list);
 
-    bool operator==(const MyList list);
-    bool operator!=(const MyList list);
-    bool operator>(const MyList list);
-    bool operator<(const MyList list);
+    bool operator==(const MyList& list);
+    bool operator!=(const MyList& list) { return !(*this == list); }
+    bool operator>(const MyList& list);
+    bool operator<(const MyList& list) { return !(*this > list); }
 
     friend std::ostream& operator<<(std::ostream& out, const MyList& list)
     {
@@ -69,8 +70,8 @@ public:
     void push_front(T value);
     T pop_back();
     T pop_front();
-    void swap();
-    void merge();
+    void swap(MyList& list);
+    void merge(MyList& list);
 
 private:
     Node* m_start{};
@@ -79,7 +80,7 @@ private:
 
 template<typename T>
 MyList<T>::MyList()
-:m_start{nullptr}, m_end{nullptr}
+        :m_start{nullptr}, m_end{nullptr}
 {
 }
 
@@ -157,6 +158,25 @@ template<typename T>
 void MyList<T>::insert(T value, int index)
 {
 
+    if(index == size())
+    {
+        push_back(value);
+        return;
+    }
+    if(!index) // index == 0
+    {
+        push_front(value);
+        return;
+    }
+
+    auto* newElement { new Node{ value } };
+    auto* current { find(index) };
+
+    newElement->previous = current->previous;
+    current->previous->next = newElement;
+
+    newElement->next = current;
+    current->previous = newElement;
 }
 
 template<typename T>
@@ -194,12 +214,12 @@ MyList<T>::Node* MyList<T>::find(int index)
     {
         return m_start;
     }
-    if(index == listSize - 1)
+    if(index == listSize - 1) //if it is index of last element
     {
         return m_end;
     }
 
-    int distanceFromEnd {listSize - index };
+    int distanceFromEnd {listSize - index - 1};
     int distanceFromStart {index};
     int counter{};
 
@@ -216,7 +236,7 @@ MyList<T>::Node* MyList<T>::find(int index)
     else
     {
         current = m_end;
-        while(counter != index)
+        while(counter != distanceFromEnd)
         {
             current = current->previous;
             ++counter;
@@ -245,7 +265,7 @@ void MyList<T>::erase(int index)
     auto current {find(index)};
 
     current->previous->next = current->next; //now the node before the current
-                                             //points to the node after the current
+    //points to the node after the current
 
     current->next->previous = current->previous;//it is the same here but in reverse
 
@@ -257,21 +277,54 @@ void MyList<T>::erase(int index)
 template<typename T>
 void MyList<T>::erase(int first, int last)
 {
+    assert(first != last && "Arguments first and last cannot be equal in erase()");
+
     int listSize { size() };
     assert(first <= last && "Bad arguments first and last in erase()");
     assert(first < listSize && first >= 0 && "Argument first is out of bounds in erase()");
     assert(last < listSize && last >= 0 && "Argument last is out of bounds in erase()");
 
-    if(first == last)
+
+    auto* firstNode{ find(first) }; //elements will be deleted after that including the element with the index last
+    auto* lastNode{ find(last) }; //this will be deleted
+
+    auto* current {firstNode->next};
+
+    while(current != lastNode && current) //element after the current != nullptr
     {
-        erase(first);
-        return;
+        current = current->next;
+        delete current->previous;
     }
 
-
+    firstNode->next = current->next;
+    if(current) //if it is not the last element
+        current->previous = firstNode;
+    else
+        m_end = firstNode;
 
 }
 
+template<typename T>
+void MyList<T>::merge(MyList& list)
+{
+    if(this == &list)
+        return;
+
+    m_end->next = list.m_start;
+    list.m_start->previous = m_end;
+
+    m_end = list.m_end;
+
+    list.m_start = nullptr;
+    list.m_end = nullptr;
+}
+
+template<typename T>
+void MyList<T>::swap(MyList& list)
+{
+    std::swap(m_start, list.m_start);
+    std::swap(m_end, list.m_end);
+}
 
 template<typename T>
 MyList<T>& MyList<T>::operator=(const MyList& list)
@@ -289,4 +342,46 @@ MyList<T>& MyList<T>::operator=(const MyList& list)
 
     return *this;
 }
+
+template<typename T>
+bool MyList<T>::operator==(const MyList& list)
+{
+    auto* firstCurrent { m_start };
+    auto* secondCurrent { list.m_start };
+
+    while(firstCurrent) // while firstCurrent != list.m_end->next
+    {
+        if(firstCurrent->value != secondCurrent->value)
+            return false;
+
+        firstCurrent = firstCurrent->next;
+        secondCurrent = secondCurrent->next;
+    }
+
+    return true;
+}
+
+template<typename T>
+bool MyList<T>::operator>(const MyList& list)
+{
+    int firstSize { size() };
+    int secondSize{ list.size() };
+    if(firstSize == secondSize)
+    {
+        auto* firstCurrent { m_start };
+        auto* secondCurrent { list.m_start };
+
+        while(firstCurrent) // while firstCurrent != list.m_end->next
+        {
+            if(firstCurrent->value < secondCurrent->value)
+                return false;
+
+            firstCurrent = firstCurrent->next;
+            secondCurrent = secondCurrent->next;
+        }
+        return true;
+    }
+    return firstSize > secondSize;
+}
 #endif //MYLIST_H
+
