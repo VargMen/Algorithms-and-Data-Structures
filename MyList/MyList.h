@@ -22,41 +22,6 @@ public:
         }
     };
 
-    struct Iterator
-    {
-        Node* node{};
-
-        Iterator(Node* node)
-        : node(node)
-        {}
-        Iterator& operator+(int value)
-        {
-            for(int i{0}; i < value; ++i)
-            {
-                assert(node && "Iterator is out of bounds in operator +");
-                node = node->next;
-            }
-            return *this;
-        }
-
-        Iterator& operator++()
-        {
-            return (*this + 1);
-        }
-
-        Iterator& operator-(int value)
-        {
-            for(int i{value}; i > 0; --i)
-            {
-                assert(node && "Iterator is out of bounds in operator +");
-                node = node->previous;
-            }
-            return *this;
-        }
-
-        T value() { return node->value; }
-        Node* element() { return node; }
-    };
     MyList();
     MyList(std::initializer_list<T> list);
     ~MyList();
@@ -91,13 +56,14 @@ public:
     Node* begin() { return m_start; }
     Node* end() { return m_end; }
 
+    Node* find(int index);
     T front() { return m_start->value; }
     T back() { return m_end->value; }
     bool empty() const { return m_start; } // if start is not nullptr so is not empty
     int size() const;
     void clear();
-    void erase(const Iterator& first, const Iterator& last);
-    void erase(const Iterator& pos);
+    void erase(int index);
+    void erase(int first, int last);
     void insert(T value, int index);
     void push_back(T value);
     void push_front(T value);
@@ -186,11 +152,13 @@ T MyList<T>::pop_front()
 
     return returnValue;
 }
+
 template<typename T>
 void MyList<T>::insert(T value, int index)
 {
 
 }
+
 template<typename T>
 void MyList<T>::clear()
 {
@@ -217,22 +185,91 @@ int MyList<T>::size() const
 }
 
 template<typename T>
-void MyList<T>::erase(const Iterator& first, const Iterator& last)
+MyList<T>::Node* MyList<T>::find(int index)
 {
+    int listSize { size() };
+    assert(index < listSize && index >= 0 && "Index is out of bounds in erase()");
+
+    if(!index) //index == 0
+    {
+        return m_start;
+    }
+    if(index == listSize - 1)
+    {
+        return m_end;
+    }
+
+    int distanceFromEnd {listSize - index };
+    int distanceFromStart {index};
+    int counter{};
+
+    Node* current {nullptr};
+    if(distanceFromStart <= distanceFromEnd)
+    {
+        current = m_start;
+        while(counter != index)
+        {
+            current = current->next;
+            ++counter;
+        }
+    }
+    else
+    {
+        current = m_end;
+        while(counter != index)
+        {
+            current = current->previous;
+            ++counter;
+        }
+    }
+    return current;
 }
 
 template<typename T>
-void MyList<T>::erase(const Iterator& pos)
+void MyList<T>::erase(int index)
 {
-    auto* previousElement { pos.node->previous };
-    previousElement->next = nullptr;
-    m_end = previousElement;
+    int listSize { size() };
+    assert(index < listSize && index >= 0 && "Index is out of bounds in erase()");
 
-    while(pos.node)
+    if(!index) //index == 0
     {
-        delete pos.node;
-        ++pos.node;
+        pop_front();
+        return;
     }
+    if(index == listSize - 1)
+    {
+        pop_back();
+        return;
+    }
+
+    auto current {find(index)};
+
+    current->previous->next = current->next; //now the node before the current
+                                             //points to the node after the current
+
+    current->next->previous = current->previous;//it is the same here but in reverse
+
+    current->next = nullptr;
+    current->previous = nullptr;
+    delete current;
+}
+
+template<typename T>
+void MyList<T>::erase(int first, int last)
+{
+    int listSize { size() };
+    assert(first <= last && "Bad arguments first and last in erase()");
+    assert(first < listSize && first >= 0 && "Argument first is out of bounds in erase()");
+    assert(last < listSize && last >= 0 && "Argument last is out of bounds in erase()");
+
+    if(first == last)
+    {
+        erase(first);
+        return;
+    }
+
+
+
 }
 
 

@@ -1,11 +1,12 @@
 #include <iostream>
-#include <list>
 #include "MyList.h"
 
 int main()
 {
-    MyList l{1, 2, 3, 4, 5};
-    std::cout << l << '\n';
+    MyList list {1, 2, 3, 4, 5, 6 ,7};
+    std::cout << list << '\n';
 
-    l.erase(MyList<int>::Iterator{l.begin()});
+    list.erase(2);
+    std::cout << list << '\n';
+    return 0;
 }
